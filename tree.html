@@ -1,0 +1,165 @@
+<!-- START SIGMA IMPORTS -->
+<script src="sigma/src/sigma.core.js"></script>
+<script src="sigma/src/conrad.js"></script>
+<script src="sigma/src/utils/sigma.utils.js"></script>
+<script src="sigma/src/utils/sigma.polyfills.js"></script>
+<script src="sigma/src/sigma.settings.js"></script>
+<script src="sigma/src/classes/sigma.classes.dispatcher.js"></script>
+<script src="sigma/src/classes/sigma.classes.configurable.js"></script>
+<script src="sigma/src/classes/sigma.classes.graph.js"></script>
+<script src="sigma/src/classes/sigma.classes.camera.js"></script>
+<script src="sigma/src/classes/sigma.classes.quad.js"></script>
+<script src="sigma/src/classes/sigma.classes.edgequad.js"></script>
+<script src="sigma/src/captors/sigma.captors.mouse.js"></script>
+<script src="sigma/src/captors/sigma.captors.touch.js"></script>
+<script src="sigma/src/renderers/sigma.renderers.canvas.js"></script>
+<script src="sigma/src/renderers/sigma.renderers.webgl.js"></script>
+<script src="sigma/src/renderers/sigma.renderers.svg.js"></script>
+<script src="sigma/src/renderers/sigma.renderers.def.js"></script>
+<script src="sigma/src/renderers/webgl/sigma.webgl.nodes.def.js"></script>
+<script src="sigma/src/renderers/webgl/sigma.webgl.nodes.fast.js"></script>
+<script src="sigma/src/renderers/webgl/sigma.webgl.edges.def.js"></script>
+<script src="sigma/src/renderers/webgl/sigma.webgl.edges.fast.js"></script>
+<script src="sigma/src/renderers/webgl/sigma.webgl.edges.arrow.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.labels.def.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.hovers.def.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.nodes.def.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.edges.def.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.edges.curve.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.edges.arrow.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.edges.curvedArrow.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.edgehovers.def.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.edgehovers.curve.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.edgehovers.arrow.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.edgehovers.curvedArrow.js"></script>
+<script src="sigma/src/renderers/canvas/sigma.canvas.extremities.def.js"></script>
+<script src="sigma/src/renderers/svg/sigma.svg.utils.js"></script>
+<script src="sigma/src/renderers/svg/sigma.svg.nodes.def.js"></script>
+<script src="sigma/src/renderers/svg/sigma.svg.edges.def.js"></script>
+<script src="sigma/src/renderers/svg/sigma.svg.edges.curve.js"></script>
+<script src="sigma/src/renderers/svg/sigma.svg.labels.def.js"></script>
+<script src="sigma/src/renderers/svg/sigma.svg.hovers.def.js"></script>
+<script src="sigma/src/middlewares/sigma.middlewares.rescale.js"></script>
+<script src="sigma/src/middlewares/sigma.middlewares.copy.js"></script>
+<script src="sigma/src/misc/sigma.misc.animation.js"></script>
+<script src="sigma/src/misc/sigma.misc.bindEvents.js"></script>
+<script src="sigma/src/misc/sigma.misc.bindDOMEvents.js"></script>
+<script src="sigma/src/misc/sigma.misc.drawHovers.js"></script>
+<!-- END SIGMA IMPORTS -->
+<div id="container">
+  <style>
+    #graph-container {
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      position: absolute;
+    }
+  </style>
+  <div id="graph-container"></div>
+</div>
+<script src="sigma/plugins/sigma.layout.forceAtlas2/worker.js"></script>
+<script src="sigma/plugins/sigma.layout.forceAtlas2/supervisor.js"></script>
+<script>
+
+var graph = {
+    nodeCollection: {},
+    edges: [],
+    nodeCount:0,
+    addNode: 
+        function(o){
+            
+            if(!this.nodeCollection[o.id]){
+                this.nodeCollection[o.id] = {id:o.id, label:o.label||o.id, size:o.size||1, color:o.color};
+                this.nodeCount ++;
+            }
+
+            if(o.parents){
+                var p = o.parents;
+                for(var i=0; i<p.length; i++){
+                    if(!this.nodeCollection[p[i]]){
+                        this.addNode({id:p[i]});
+                    }
+                    this.nodeCollection[p[i]].size +=2;
+                    this.addEdge({source:this.nodeCollection[p[i]].id,target:o.id, weight:1});
+                }
+                //if(p.length == 2){
+                //    this.addEdge({source:this.nodeCollection[p[0]].id,target:this.nodeCollection[p[1]].id,color:'#000', weight:0});
+                //}
+            }
+        },
+    addEdge:
+        function(o){
+            this.edges.push({id:'e'+this.edges.length, source:o.source, target:o.target, color:o.color, weight:o.weight})
+        },
+    getGraph: function(){
+        var g = {nodes: [],edges: []};
+        var i=0;
+        for(key in this.nodeCollection){
+            this.nodeCollection[key].x = 100 * Math.cos(2*i * Math.PI / this.nodeCount);
+            this.nodeCollection[key].y = 100 * Math.sin(2*i * Math.PI / this.nodeCount);
+            g.nodes.push(this.nodeCollection[key]);
+            i++;
+        }
+        
+        for(var i=0; i<this.edges.length; i++){
+            g.edges.push(this.edges[i]);
+        }
+        return g;
+    }
+};
+
+var colors = {M:'#00F', F:'#F00'};
+
+var people = {"@I1@":{"NAME":"Joshua Paul /Hendrix/","SEX":"M","id":"@I1@"},"@I2@":{"NAME":"Tracy Annette /Reese/","SEX":"F","id":"@I2@"},"@I3@":{"NAME":"Roger Dale /Hendrix/","SEX":"M","id":"@I3@"},"@I4@":{"NAME":"Janice Marie /Viera/","SEX":"F","id":"@I4@"},"@I5@":{"NAME":"Owen Reese /Hendrix/","SEX":"M","id":"@I5@"},"@I6@":{"NAME":"Tommy /Hendrix/","SEX":"M","id":"@I6@"},"@I7@":{"NAME":"Barbara Jean /Hart/","SEX":"F","id":"@I7@"},"@I8@":{"NAME":"Edward /Viera/","SEX":"M","id":"@I8@"},"@I9@":{"NAME":"Geneva /York/","SEX":"F","id":"@I9@"},"@I10@":{"NAME":"Michael Wayne /Reese/","SEX":"M","id":"@I10@"},"@I11@":{"NAME":"Deborah Iona Louise /Manley/","SEX":"F","id":"@I11@"},"@I12@":{"NAME":"Reba G. /Power/","SEX":"F","id":"@I12@"},"@I13@":{"NAME":"Van /Manley/","SEX":"M","id":"@I13@"},"@I14@":{"NAME":"Jefferson Alexander /Manley/","SEX":"M","id":"@I14@"},"@I15@":{"NAME":"Grace Jean /Kelly/","SEX":"F","id":"@I15@"},"@I16@":{"NAME":"Lillie Mae Atkinson /York/","SEX":"F","id":"@I16@"},"@I17@":{"NAME":"Charles Edward /Reese/","SEX":"M","id":"@I17@"},"@I18@":{"NAME":"Perry Robert /Reese/","SEX":"M","id":"@I18@"},"@I19@":{"NAME":"Elizabeth /Wallace/","SEX":"F","id":"@I19@"},"@I20@":{"NAME":"Lillian Jeanette /Ginn/","SEX":"F","id":"@I20@"},"@I21@":{"NAME":"Mae Belle /Barrett/","SEX":"F","id":"@I21@"},"@I22@":{"NAME":"Keiffer Lamar /Ginn/","SEX":"M","id":"@I22@"},"@I23@":{"NAME":"Jeanette Drucilla /Simpson/","SEX":"F","id":"@I23@"},"@I24@":{"NAME":"Henry David /Simpson/","SEX":"M","id":"@I24@"},"@I25@":{"NAME":"Mamie Ella Louise /Gibson/","SEX":"F","id":"@I25@"},"@I26@":{"NAME":"Tom Bell /Hendrix/","SEX":"M","id":"@I26@"},"@I27@":{"NAME":"Flora Lula /Nicholson/","SEX":"F","id":"@I27@"},"@I28@":{"NAME":"Stacy Michelle /Reese/","SEX":"F","id":"@I28@"},"@I29@":{"NAME":"Kristopher Neil /Hendrix/","SEX":"M","id":"@I29@"},"@I30@":{"NAME":"Heath /Carlton/","SEX":"M","id":"@I30@"},"@I31@":{"NAME":"Julie Marie /Carlton/","SEX":"F","id":"@I31@"},"@I32@":{"NAME":"Jeff /Carlton/","SEX":"M","id":"@I32@"},"@I33@":{"NAME":"Jackson William /Couch/","SEX":"M","id":"@I33@"},"@I34@":{"NAME":"Tasha Marie /Kinley/","SEX":"F","id":"@I34@"},"@I35@":{"NAME":"Mia Isabel /Hendrix/","SEX":"F","id":"@I35@"},"@I36@":{"NAME":"Savannah O'Hara /Hendrix/","SEX":"F","id":"@I36@"},"@I37@":{"NAME":"Robin Gaye /Ruff/","SEX":"F","id":"@I37@"},"@I38@":{"NAME":"Zachariah Hamilton Lee /Hendrix/","SEX":"M","id":"@I38@"},"@I39@":{"NAME":"Thatcher Ruff /Hendrix/","SEX":"M","id":"@I39@"},"@I40@":{"NAME":"James Benjamin /Ruff/","SEX":"M","id":"@I40@"},"@I41@":{"NAME":"Nancie /Lester/","SEX":"F","id":"@I41@"},"@I42@":{"NAME":"Thomas /Kinley/","SEX":"M","id":"@I42@"},"@I43@":{"NAME":"Donna /Chapman/","SEX":"F","id":"@I43@"},"@I44@":{"NAME":"Steven /Couch/","SEX":"M","id":"@I44@"},"@I45@":{"NAME":"Renae /Hendrix/","SEX":"F","id":"@I45@"},"@I46@":{"NAME":"Evelyn /Hart/","SEX":"F","id":"@I46@"},"@I47@":{"NAME":"Darrell /Hart/","SEX":"M","id":"@I47@"},"@I48@":{"NAME":"Henry Eugene /Manley/","SEX":"M","id":"@I48@"},"@I49@":{"NAME":"Belinda Ann /Manley/","SEX":"F","id":"@I49@"},"@I50@":{"NAME":"Garey Kenneth /Manley/","SEX":"M","id":"@I50@"},"@I51@":{"NAME":"Carol /Reese/","SEX":"F","id":"@I51@"},"@I52@":{"NAME":"Sammy /Reese/","SEX":"M","id":"@I52@"},"@I53@":{"NAME":"David /Reese/","SEX":"M","id":"@I53@"},"@I54@":{"NAME":"Janice /Reese/","SEX":"F","id":"@I54@"},"@I55@":{"NAME":"Ricky /Reese/","SEX":"M","id":"@I55@"},"@I56@":{"NAME":"Edward /Viera/ JR.","SEX":"M","id":"@I56@"},"@I57@":{"NAME":"Doug Y. /Viera/","SEX":"M","id":"@I57@"},"@I58@":{"NAME":"Jo Ann /Viera/","SEX":"F","id":"@I58@"},"@I59@":{"NAME":"Raymond /Hendrix/","SEX":"M","id":"@I59@"},"@I60@":{"NAME":"Jack /Hendrix/","SEX":"M","id":"@I60@"},"@I61@":{"NAME":"Don /Hendrix/","SEX":"M","id":"@I61@"},"@I62@":{"NAME":"Jackie /Adams/","SEX":"F","id":"@I62@"},"@I63@":{"NAME":"Susan /Hendrix/","SEX":"F","id":"@I63@"},"@I64@":{"NAME":"Terri /Hendrix/","SEX":"F","id":"@I64@"},"@I65@":{"NAME":"Jerry /Williamson/","SEX":"M","id":"@I65@"},"@I66@":{"NAME":"Michael Scott /Williamson/","SEX":"M","id":"@I66@"},"@I67@":{"NAME":"Rhonda Jeanette /Williamson/","SEX":"F","id":"@I67@"},"@I68@":{"NAME":"Helen /Beard/","SEX":"F","id":"@I68@"},"@I69@":{"NAME":"Joseph Van /Manley/","SEX":"M","id":"@I69@"},"@I70@":{"NAME":"David Kenneth /Manley/","SEX":"M","id":"@I70@"},"@I71@":{"NAME":"Renee /Dowell/","SEX":"F","id":"@I71@"},"@I72@":{"NAME":"Burton /Blackmar/ III","SEX":"M","id":"@I72@"},"@I73@":{"NAME":"Katherine Jane /Blackmar/","SEX":"F","id":"@I73@"},"@I74@":{"NAME":"Sarah Elizabeth /Blackmar/","SEX":"F","id":"@I74@"},"@I75@":{"NAME":"Sharon Melissa /Tate/","SEX":"F","id":"@I75@"},"@I76@":{"NAME":"Darren Van /Manley/","SEX":"M","id":"@I76@"},"@I77@":{"NAME":"William Garrett /Manley/","SEX":"M","id":"@I77@"},"@I78@":{"NAME":"Betty Elaine /Reynolds/","SEX":"F","id":"@I78@"},"@I79@":{"NAME":"Laura Michelle /Manley/","SEX":"F","id":"@I79@"},"@I80@":{"NAME":"Terry /Hughes/","SEX":"M","id":"@I80@"},"@I81@":{"NAME":"Hannah Elise /Hughes/","SEX":"F","id":"@I81@"},"@I82@":{"NAME":"Tony /Del Rio/","SEX":"M","id":"@I82@"},"@I83@":{"NAME":"Gracie Jeanette /Del Rio/","SEX":"F","id":"@I83@"},"@I84@":{"NAME":"Andrew Donovan /Burt/","SEX":"M","id":"@I84@"},"@I85@":{"NAME":"/Burt/","SEX":"M","id":"@I85@"},"@I86@":{"NAME":"Jason /Hart/","SEX":"M","id":"@I86@"},"@I87@":{"NAME":"Dana /Hart/","SEX":"F","id":"@I87@"},"@I88@":{"NAME":"Brandy Nechelle /Hart/","SEX":"F","id":"@I88@"},"@I89@":{"NAME":"Authour O'Dell /Hart/","SEX":"M","id":"@I89@"},"@I90@":{"NAME":"Moody /Hart/","SEX":"M","id":"@I90@"},"@I91@":{"NAME":"Toulla Frances /Crow/","SEX":"F","id":"@I91@"},"@I92@":{"NAME":"William Frances /Power/","SEX":"M","id":"@I92@"},"@I93@":{"NAME":"Gorden /Hendrix/","SEX":"M","id":"@I93@"},"@I94@":{"NAME":"Haddy /Hendrix/","SEX":"F","id":"@I94@"},"@I95@":{"NAME":"John /Pawelczyk/","SEX":"M","id":"@I95@"},"@I96@":{"NAME":"Erin /Contois/","SEX":"F","id":"@I96@"},"@I97@":{"NAME":"James Clyde /Ruff/","SEX":"M","id":"@I97@"},"@I98@":{"NAME":"Mildred Francis /Paul/","SEX":"F","id":"@I98@"},"@I99@":{"NAME":"Harry Lee /Lester/","SEX":"M","id":"@I99@"},"@I100@":{"NAME":"Mamie Lou /Seymour/","SEX":"F","id":"@I100@"},"@I101@":{"NAME":"Fletcher /Paul/","SEX":"M","id":"@I101@"},"@I102@":{"NAME":"Della /Slate/","SEX":"F","id":"@I102@"},"@I103@":{"NAME":"Kyle Bronson /Ruff/","SEX":"M","id":"@I103@"},"@I104@":{"NAME":"Gregory Paul /Ruff/","SEX":"M","id":"@I104@"},"@I105@":{"NAME":"James Bently /Ruff/ Jr.","SEX":"M","id":"@I105@"},"@I106@":{"NAME":"Cynthia Lee /Ruff/","SEX":"F","id":"@I106@"},"@I107@":{"NAME":"Bradley Curtis /Ruff/","SEX":"M","id":"@I107@"},"@I108@":{"NAME":"Amanda /Reese/","SEX":"F","id":"@I108@"},"@I109@":{"NAME":"Kim /Reese/","SEX":"F","id":"@I109@"},"@I110@":{"NAME":"Danny /Phillips/","SEX":"M","id":"@I110@"},"@I111@":{"NAME":"Terry /Graham/","SEX":"M","id":"@I111@"},"@I112@":{"NAME":"Sarah Ann /Atkins/","SEX":"F","id":"@I112@"},"@I113@":{"NAME":"George /Cromer/","SEX":"M","id":"@I113@"},"@I114@":{"NAME":"Abner /Atkins/","SEX":"M","id":"@I114@"},"@I115@":{"NAME":"Sarah /Carrell/","SEX":"F","id":"@I115@"},"@I116@":{"NAME":"Henery /Cromer/","SEX":"M","id":"@I116@"},"@I117@":{"NAME":"Henery Rush /Cromer/","SEX":"M","id":"@I117@"},"@I118@":{"NAME":"Sarah S /Fowler/","SEX":"F","id":"@I118@"},"@I119@":{"NAME":"Kenneth /Suddereth/","SEX":"M","id":"@I119@"},"@I120@":{"NAME":"Kenny /Suddereth/","SEX":"M","id":"@I120@"},"@I121@":{"NAME":"Jenny Clair /Suddereth/","SEX":"F","id":"@I121@"},"@I122@":{"NAME":"Brannon /Carey/","SEX":"M","id":"@I122@"},"@I123@":{"NAME":"David /Gill/","SEX":"M","id":"@I123@"},"@I124@":{"NAME":"Jordan /Gill/","SEX":"F","id":"@I124@"},"@I125@":{"NAME":"Matthew /Gill/","SEX":"M","id":"@I125@"},"@I126@":{"NAME":"Alec J. /Viera/","SEX":"M","id":"@I126@"},"@I127@":{"NAME":"Reghan E. /Viera/","SEX":"F","id":"@I127@"},"@I128@":{"NAME":"Maureen A. /ROUSSEAU/","SEX":"F","id":"@I128@"},"@I129@":{"NAME":"Ben /Viera/","SEX":"M","id":"@I129@"},"@I130@":{"NAME":"Jamie Katelyn /Viera/","SEX":"F","id":"@I130@"},"@I131@":{"NAME":"Niki /Smith/","SEX":"F","id":"@I131@"},"@I132@":{"NAME":"William Joseph /Chamberlain/","SEX":"M","id":"@I132@"},"@I133@":{"NAME":"Nancy /Chamberlain/","SEX":"F","id":"@I133@"},"@I134@":{"NAME":"Susan /Chamberlain/","SEX":"F","id":"@I134@"},"@I135@":{"NAME":"Kristen /White/","SEX":"F","id":"@I135@"},"@I136@":{"NAME":"James /White/","SEX":"M","id":"@I136@"},"@I137@":{"NAME":"Larry /White/","SEX":"M","id":"@I137@"},"@I138@":{"NAME":"John /Nicholson/","SEX":"M","id":"@I138@"},"@I139@":{"NAME":"Talula /Spear/","SEX":"F","id":"@I139@"},"@I140@":{"NAME":"Gregory /Clark/","SEX":"M","id":"@I140@"},"@I141@":{"NAME":"Leigh Ann /Clark/","SEX":"F","id":"@I141@"},"@I142@":{"NAME":"Lindsay /Clark/","SEX":"F","id":"@I142@"},"@I143@":{"NAME":"Matthew /Bartlett/","SEX":"M","id":"@I143@"},"@I144@":{"NAME":"William /Simpson/","SEX":"M","id":"@I144@"},"@I145@":{"NAME":"Icy /Watkins/","SEX":"F","id":"@I145@"},"@I146@":{"NAME":"Commodore /Gibson/","SEX":"M","id":"@I146@"},"@I147@":{"NAME":"Samantha /Anderson/","SEX":"F","id":"@I147@"},"@I148@":{"NAME":"John /Kelly/","SEX":"M","id":"@I148@"},"@I149@":{"NAME":"Mary Lee /Hendricks/","SEX":"F","id":"@I149@"},"@I150@":{"NAME":"Gatha /Manley/","SEX":"F","id":"@I150@"},"@I151@":{"NAME":"Doris /Manley/","SEX":"F","id":"@I151@"},"@I152@":{"NAME":"Katherine /Simpson/","SEX":"F","id":"@I152@"},"@I153@":{"NAME":"William /Simpson/","SEX":"M","id":"@I153@"},"@I154@":{"NAME":"Gladys /Simpson/","SEX":"F","id":"@I154@"},"@I155@":{"NAME":"Ione /Simpson/","SEX":"F","id":"@I155@"},"@I156@":{"NAME":"Ruth /Manley/","SEX":"F","id":"@I156@"},"@I157@":{"NAME":"Eddie Belle /Manley/","SEX":"F","id":"@I157@"},"@I158@":{"NAME":"Paul /Manley/","SEX":"M","id":"@I158@"},"@I159@":{"NAME":"Sidney /Manley/","SEX":"M","id":"@I159@"},"@I160@":{"NAME":"John /Manley/","SEX":"M","id":"@I160@"},"@I161@":{"NAME":"Steve /Manley/","SEX":"M","id":"@I161@"},"@I162@":{"NAME":"Hugh /Manley/","SEX":"M","id":"@I162@"},"@I163@":{"NAME":"Victoria /Manley/","SEX":"F","id":"@I163@"},"@I164@":{"NAME":"Lanier /Edwards/","SEX":"M","id":"@I164@"},"@I165@":{"NAME":"Betty /Edwards/","SEX":"F","id":"@I165@"},"@I166@":{"NAME":"John /Edwards/","SEX":"M","id":"@I166@"},"@I167@":{"NAME":"Curtis /Power/","SEX":"M","id":"@I167@"},"@I168@":{"NAME":"Gene /Power/","SEX":"M","id":"@I168@"},"@I169@":{"NAME":"Joann //","SEX":"F","id":"@I169@"},"@I170@":{"NAME":"Michael /Edwards/","SEX":"M","id":"@I170@"},"@I171@":{"NAME":"Kathy /Edwards/","SEX":"F","id":"@I171@"},"@I172@":{"NAME":"Ellis /Bateman/","SEX":"M","id":"@I172@"},"@I173@":{"NAME":"S. /Smith/","SEX":"M","id":"@I173@"},"@I174@":{"NAME":"Sonny /Smith/","SEX":"M","id":"@I174@"},"@I175@":{"NAME":"Doug /Smith/","SEX":"M","id":"@I175@"},"@I176@":{"NAME":"Warren /Looper/","SEX":"M","id":"@I176@"},"@I177@":{"NAME":"Robert /Looper/","SEX":"M","id":"@I177@"},"@I178@":{"NAME":"Tammy /Looper/","SEX":"F","id":"@I178@"},"@I179@":{"NAME":"Unknown /Ford/","SEX":"M","id":"@I179@"},"@I180@":{"NAME":"Berta Mae /Caldwell/","SEX":"F","id":"@I180@"},"@I181@":{"NAME":"Michael /Manley/","SEX":"M","id":"@I181@"},"@I182@":{"NAME":"Phil /Manley/","SEX":"M","id":"@I182@"},"@I183@":{"NAME":"Estelle /Unknown/","SEX":"F","id":"@I183@"},"@I184@":{"NAME":"Sherry /Manley/","SEX":"F","id":"@I184@"},"@I185@":{"NAME":"Terry /Manley/","SEX":"F","id":"@I185@"},"@I186@":{"NAME":"Paul /Manley/","SEX":"M","id":"@I186@"},"@I187@":{"NAME":"Larry /Manley/","SEX":"M","id":"@I187@"},"@I188@":{"NAME":"Teen /Unknown/","SEX":"F","id":"@I188@"},"@I189@":{"NAME":"Richard /Manley/","SEX":"M","id":"@I189@"},"@I190@":{"NAME":"Bobby /Manley/","SEX":"M","id":"@I190@"},"@I191@":{"NAME":"Ed /Pelot/","SEX":"M","id":"@I191@"},"@I192@":{"NAME":"Lynn /Pelot/","SEX":"F","id":"@I192@"},"@I193@":{"NAME":"/Pelot/","SEX":"M","id":"@I193@"},"@I194@":{"NAME":"Johnny /McDaniel/","SEX":"M","id":"@I194@"},"@I195@":{"NAME":"Richard /McDaniel/","SEX":"M","id":"@I195@"},"@I196@":{"NAME":"Steve /McDaniel/","SEX":"M","id":"@I196@"},"@I197@":{"NAME":"Jimmy /McDaniel/","SEX":"M","id":"@I197@"},"@I198@":{"NAME":"Charles /McDaniel/","SEX":"M","id":"@I198@"},"@I199@":{"NAME":"Carolyn /McDaniel/","SEX":"F","id":"@I199@"},"@I200@":{"NAME":"Imogene /Clark/","SEX":"F","id":"@I200@"},"@I201@":{"NAME":"Hubert /Payne/","SEX":"M","id":"@I201@"},"@I202@":{"NAME":"Lois /Payne/","SEX":"F","id":"@I202@"},"@I203@":{"NAME":"Hubert /Lane/","SEX":"M","id":"@I203@"},"@I204@":{"NAME":"Joy Lynn /Lane/","SEX":"F","id":"@I204@"},"@I205@":{"NAME":"Cliff /Loudermilk/","SEX":"M","id":"@I205@"},"@I206@":{"NAME":"Gary /Loudermilk/","SEX":"M","id":"@I206@"},"@I207@":{"NAME":"Toots /Loudermilk/","SEX":"F","id":"@I207@"},"@I208@":{"NAME":"Stephen /Green/","SEX":"M","id":"@I208@"},"@I209@":{"NAME":"Michaela Ann /Green/","SEX":"F","id":"@I209@"},"@I210@":{"NAME":"Jimmy /Hendrix/","SEX":"M","id":"@I210@"},"@I211@":{"NAME":"Jason /Hendrix/","SEX":"M","id":"@I211@"},"@I212@":{"NAME":"Richie /Hutson/","SEX":"M","id":"@I212@"},"@I213@":{"NAME":"Melinda /Hendrix/","SEX":"F","id":"@I213@"},"@I214@":{"NAME":"Anna /Cromer/","SEX":"F","id":"@I214@"},"@I215@":{"NAME":"Mary Ann /Cromer/","SEX":"F","id":"@I215@"},"@I216@":{"NAME":"Eliza Jane /Cromer/","SEX":"F","id":"@I216@"},"@I217@":{"NAME":"Salina /Cromer/","SEX":"F","id":"@I217@"},"@I218@":{"NAME":"Jerome Derrick /Cromer/","SEX":"M","id":"@I218@"},"@I219@":{"NAME":"Sarah Malinda /Cromer/","SEX":"F","id":"@I219@"},"@I220@":{"NAME":"John Wesley /Cromer/","SEX":"M","id":"@I220@"},"@I221@":{"NAME":"Emeline C. /Cromer/","SEX":"F","id":"@I221@"},"@I222@":{"NAME":"Ella Grace /Hendrix/","SEX":"F","id":"@I222@"},"@I223@":{"NAME":"Meredith /Hendrix/","SEX":"F","id":"@I223@"},"@I224@":{"NAME":"Preston Richard /Hutson/","SEX":"M","id":"@I224@"},"@I225@":{"NAME":"Jon /Ortiz/","SEX":"M","id":"@I225@"},"@I226@":{"NAME":"Andrew /Ortiz/","SEX":"M","id":"@I226@"},"@I227@":{"NAME":"Madison K. /Viera/","SEX":"F","id":"@I227@"},"@I228@":{"NAME":"William Albert /Lee/","SEX":"M","id":"@I228@"},"@I229@":{"NAME":"Michelle /Lee/","SEX":"F","id":"@I229@"},"@I230@":{"NAME":"Sheryl /Lee/","SEX":"F","id":"@I230@"},"@I231@":{"NAME":"David /FULGUM/","SEX":"M","id":"@I231@"},"@I232@":{"NAME":"Craig /FULGUM/","SEX":"M","id":"@I232@"},"@I233@":{"NAME":"Kane /FULGUM/","SEX":"M","id":"@I233@"},"@I234@":{"NAME":"Dee Ann /ROBERTS/","SEX":"F","id":"@I234@"},"@I235@":{"NAME":"Hunter /Ruff/","SEX":"M","id":"@I235@"},"@I236@":{"NAME":"Shannon /Andrews/","SEX":"F","id":"@I236@"},"@I237@":{"NAME":"Anna Katelyn /Ruff/","SEX":"F","id":"@I237@"},"@I238@":{"NAME":"Ansley Victoria /Ruff/","SEX":"F","id":"@I238@"},"@I239@":{"NAME":"Amy /Ayers/","SEX":"F","id":"@I239@"},"@I240@":{"NAME":"Ashtom Laurel /Ruff/","SEX":"F","id":"@I240@"},"@I241@":{"NAME":"Olicia Caroline /Ruff/","SEX":"F","id":"@I241@"},"@I242@":{"NAME":"Graham /Clark/","SEX":"M","id":"@I242@"},"@I243@":{"NAME":"Matthew Landon /Bartlett/","SEX":"M","id":"@I243@"},"@I244@":{"NAME":"Kaleb /Hendrix/","SEX":"M","id":"@I244@"},"@I245@":{"NAME":"Theodore Emmett /Green/","SEX":"M","id":"@I245@"},"@I246@":{"NAME":"Alice Elizabeth /Hutson/","SEX":"F","id":"@I246@"},"@I247@":{"NAME":"Ralph Plumer /York/","SEX":"M","id":"@I247@"},"@I248@":{"NAME":"Annie Glaydelle /York/ Weaver","SEX":"F","id":"@I248@"},"@I249@":{"NAME":"Joe J. /Weaver/","SEX":"M","id":"@I249@"},"@I250@":{"NAME":"Joe David /Weaver/","SEX":"M","id":"@I250@"},"@I251@":{"NAME":"Joy /Weaver/ Merrow","SEX":"F","id":"@I251@"},"@I252@":{"NAME":"Donald /Weaver/","SEX":"M","id":"@I252@"},"@I253@":{"NAME":"Erik /Amundson/","SEX":"M","id":"@I253@"},"@I254@":{"NAME":"Angie","SEX":"F","id":"@I254@"},"@I255@":{"NAME":"Edward /York/","SEX":"M","id":"@I255@"},"@I256@":{"NAME":"Richard /York/","SEX":"M","id":"@I256@"},"@I257@":{"NAME":"Teddy /York/","SEX":"M","id":"@I257@"},"@I258@":{"NAME":"Rudy /York/","SEX":"M","id":"@I258@"},"@I259@":{"NAME":"Henry E. /Lee/","SEX":"M","id":"@I259@"},"@I260@":{"NAME":"Lucy /Charpton/","SEX":"F","id":"@I260@"},"@I261@":{"NAME":"William Anthony /Lee/","SEX":"M","id":"@I261@"},"@I262@":{"NAME":"Wayne Keith /Lee/","SEX":"M","id":"@I262@"},"@I263@":{"NAME":"Curtis Albert /Lee/","SEX":"M","id":"@I263@"},"@I264@":{"NAME":"Kayla Cristin /Morris/","SEX":"F","id":"@I264@"},"@I265@":{"NAME":"Brittany Lee /Morris/","SEX":"F","id":"@I265@"},"@I266@":{"NAME":"Bennie /Lee/","SEX":"M","id":"@I266@"},"@I267@":{"NAME":"Flem /Lee/","SEX":"U","id":"@I267@"},"@I268@":{"NAME":"Peggy /Lee/","SEX":"F","id":"@I268@"},"@I269@":{"NAME":"Maude /Lee/","SEX":"F","id":"@I269@"},"@I270@":{"NAME":"Stephanie /Kozak/","SEX":"F","id":"@I270@"}};
+var families = {"@F1@":{"HUSB":"@I1@","WIFE":"@I2@","CHIL":["@I5@","@I222@"],"id":"@F1@"},"@F2@":{"HUSB":"@I3@","WIFE":"@I4@","CHIL":["@I1@","@I29@"],"id":"@F2@"},"@F3@":{"HUSB":"@I6@","WIFE":"@I7@","CHIL":["@I3@","@I45@"],"id":"@F3@"},"@F4@":{"HUSB":"@I8@","WIFE":"@I9@","CHIL":["@I4@","@I56@","@I57@","@I58@"],"id":"@F4@"},"@F5@":{"HUSB":"@I10@","WIFE":"@I11@","CHIL":["@I2@","@I28@"],"id":"@F5@"},"@F6@":{"HUSB":"@I89@","WIFE":"@I12@","CHIL":["@I7@","@I46@","@I47@"],"id":"@F6@"},"@F7@":{"HUSB":"@I13@","WIFE":"@I23@","CHIL":["@I11@","@I48@","@I49@","@I50@"],"id":"@F7@"},"@F8@":{"HUSB":"@I14@","WIFE":"@I15@","CHIL":["@I13@","@I150@","@I151@","@I156@","@I157@","@I158@","@I159@","@I160@","@I161@","@I162@","@I163@"],"id":"@F8@"},"@F9@":{"HUSB":"@I247@","WIFE":"@I16@","CHIL":["@I9@","@I248@","@I255@","@I256@","@I257@","@I258@"],"id":"@F9@"},"@F10@":{"HUSB":"@I17@","WIFE":"@I20@","CHIL":["@I10@","@I51@","@I52@","@I53@","@I54@","@I55@"],"id":"@F10@"},"@F11@":{"HUSB":"@I18@","WIFE":"@I19@","CHIL":["@I17@"],"id":"@F11@"},"@F12@":{"HUSB":"@I22@","WIFE":"@I21@","CHIL":["@I20@"],"id":"@F12@"},"@F13@":{"HUSB":"@I24@","WIFE":"@I25@","CHIL":["@I23@","@I152@","@I153@","@I154@","@I155@"],"id":"@F13@"},"@F14@":{"HUSB":"@I26@","WIFE":"@I27@","CHIL":["@I6@","@I59@","@I60@","@I61@"],"id":"@F14@"},"@F15@":{"HUSB":"@I44@","WIFE":"@I31@","CHIL":["@I33@"],"id":"@F15@"},"@F16@":{"HUSB":"@I29@","WIFE":"@I34@","CHIL":["@I35@","@I244@"],"id":"@F16@"},"@F17@":{"HUSB":"@I3@","WIFE":"@I37@","CHIL":["@I36@","@I38@","@I39@","@I223@"],"id":"@F17@"},"@F18@":{"HUSB":"@I40@","WIFE":"@I41@","CHIL":["@I37@","@I103@","@I104@","@I105@","@I106@","@I107@"],"id":"@F18@"},"@F19@":{"HUSB":"@I32@","WIFE":"@I4@","CHIL":["@I30@","@I31@"],"id":"@F19@"},"@F20@":{"HUSB":"@I42@","WIFE":"@I43@","CHIL":["@I34@"],"id":"@F20@"},"@F21@":{"HUSB":"@I59@","WIFE":"@I62@","CHIL":["@I63@","@I64@"],"id":"@F21@"},"@F22@":{"HUSB":"@I65@","WIFE":"@I49@","CHIL":["@I66@","@I67@"],"id":"@F22@"},"@F23@":{"HUSB":"@I50@","WIFE":"@I68@","CHIL":["@I69@","@I70@"],"id":"@F23@"},"@F24@":{"HUSB":"","WIFE":"@I68@","CHIL":["@I71@"],"id":"@F24@"},"@F25@":{"HUSB":"@I72@","WIFE":"@I71@","CHIL":["@I73@","@I74@"],"id":"@F25@"},"@F26@":{"HUSB":"@I69@","WIFE":"@I75@","CHIL":["@I76@","@I77@"],"id":"@F26@"},"@F27@":{"HUSB":"@I48@","WIFE":"@I78@","CHIL":["@I79@"],"id":"@F27@"},"@F28@":{"HUSB":"@I80@","WIFE":"@I79@","CHIL":["@I81@"],"id":"@F28@"},"@F29@":{"HUSB":"@I82@","WIFE":"@I67@","CHIL":["@I83@"],"id":"@F29@"},"@F30@":{"HUSB":"@I85@","WIFE":"@I67@","CHIL":["@I84@"],"id":"@F30@"},"@F31@":{"HUSB":"@I47@","WIFE":"","CHIL":["@I86@","@I87@","@I88@"],"id":"@F31@"},"@F32@":{"HUSB":"@I90@","WIFE":"","CHIL":["@I89@"],"id":"@F32@"},"@F33@":{"HUSB":"@I92@","WIFE":"@I91@","CHIL":["@I12@"],"id":"@F33@"},"@F34@":{"HUSB":"@I93@","WIFE":"@I94@","CHIL":["@I26@"],"id":"@F34@"},"@F35@":{"HUSB":"","WIFE":"@I58@","CHIL":["@I95@","@I96@"],"id":"@F35@"},"@F36@":{"HUSB":"@I97@","WIFE":"@I98@","CHIL":["@I40@"],"id":"@F36@"},"@F37@":{"HUSB":"@I99@","WIFE":"@I100@","CHIL":["@I41@"],"id":"@F37@"},"@F38@":{"HUSB":"@I101@","WIFE":"@I102@","CHIL":["@I98@"],"id":"@F38@"},"@F39@":{"HUSB":"@I53@","WIFE":"@I108@","CHIL":[],"id":"@F39@"},"@F40@":{"HUSB":"@I55@","WIFE":"@I109@","CHIL":[],"id":"@F40@"},"@F41@":{"HUSB":"@I110@","WIFE":"@I51@","CHIL":[],"id":"@F41@"},"@F42@":{"HUSB":"@I111@","WIFE":"@I54@","CHIL":[],"id":"@F42@"},"@F43@":{"HUSB":"@I113@","WIFE":"@I112@","CHIL":["@I117@","@I214@","@I215@","@I216@","@I217@","@I218@","@I219@","@I220@","@I221@"],"id":"@F43@"},"@F44@":{"HUSB":"@I114@","WIFE":"@I115@","CHIL":["@I112@"],"id":"@F44@"},"@F45@":{"HUSB":"@I116@","WIFE":"","CHIL":["@I113@"],"id":"@F45@"},"@F46@":{"HUSB":"","WIFE":"","CHIL":["@I114@"],"id":"@F46@"},"@F47@":{"HUSB":"@I117@","WIFE":"@I118@","CHIL":[],"id":"@F47@"},"@F48@":{"HUSB":"@I119@","WIFE":"@I63@","CHIL":["@I120@","@I121@"],"id":"@F48@"},"@F49@":{"HUSB":"@I122@","WIFE":"@I121@","CHIL":[],"id":"@F49@"},"@F50@":{"HUSB":"@I123@","WIFE":"@I64@","CHIL":["@I124@","@I125@"],"id":"@F50@"},"@F51@":{"HUSB":"@I57@","WIFE":"@I128@","CHIL":["@I127@","@I227@"],"id":"@F51@"},"@F52@":{"HUSB":"@I56@","WIFE":"@I131@","CHIL":["@I129@","@I130@"],"id":"@F52@"},"@F53@":{"HUSB":"@I132@","WIFE":"@I4@","CHIL":[],"id":"@F53@"},"@F54@":{"HUSB":"@I132@","WIFE":"","CHIL":["@I133@","@I134@"],"id":"@F54@"},"@F55@":{"HUSB":"@I137@","WIFE":"@I134@","CHIL":["@I135@","@I136@"],"id":"@F55@"},"@F56@":{"HUSB":"@I138@","WIFE":"@I139@","CHIL":["@I27@"],"id":"@F56@"},"@F57@":{"HUSB":"@I140@","WIFE":"@I45@","CHIL":["@I141@","@I142@"],"id":"@F57@"},"@F58@":{"HUSB":"@I143@","WIFE":"@I141@","CHIL":["@I243@"],"id":"@F58@"},"@F59@":{"HUSB":"@I144@","WIFE":"@I145@","CHIL":["@I24@"],"id":"@F59@"},"@F60@":{"HUSB":"@I146@","WIFE":"@I147@","CHIL":["@I25@"],"id":"@F60@"},"@F61@":{"HUSB":"@I148@","WIFE":"@I149@","CHIL":["@I15@"],"id":"@F61@"},"@F62@":{"HUSB":"@I166@","WIFE":"@I150@","CHIL":["@I164@","@I165@"],"id":"@F62@"},"@F63@":{"HUSB":"@I167@","WIFE":"@I165@","CHIL":["@I168@"],"id":"@F63@"},"@F64@":{"HUSB":"@I164@","WIFE":"@I169@","CHIL":["@I170@","@I171@"],"id":"@F64@"},"@F65@":{"HUSB":"@I172@","WIFE":"@I151@","CHIL":[],"id":"@F65@"},"@F66@":{"HUSB":"@I173@","WIFE":"@I156@","CHIL":["@I174@","@I175@"],"id":"@F66@"},"@F67@":{"HUSB":"@I176@","WIFE":"@I157@","CHIL":["@I177@","@I178@"],"id":"@F67@"},"@F68@":{"HUSB":"@I179@","WIFE":"@I178@","CHIL":[],"id":"@F68@"},"@F69@":{"HUSB":"@I158@","WIFE":"@I180@","CHIL":["@I181@","@I182@"],"id":"@F69@"},"@F70@":{"HUSB":"@I160@","WIFE":"@I183@","CHIL":["@I184@","@I185@","@I186@"],"id":"@F70@"},"@F71@":{"HUSB":"@I161@","WIFE":"","CHIL":["@I187@"],"id":"@F71@"},"@F72@":{"HUSB":"@I162@","WIFE":"@I188@","CHIL":["@I189@","@I190@"],"id":"@F72@"},"@F73@":{"HUSB":"@I191@","WIFE":"@I163@","CHIL":["@I192@","@I193@"],"id":"@F73@"},"@F74@":{"HUSB":"@I194@","WIFE":"@I152@","CHIL":["@I195@","@I196@","@I197@","@I198@","@I199@"],"id":"@F74@"},"@F75@":{"HUSB":"@I153@","WIFE":"@I200@","CHIL":[],"id":"@F75@"},"@F76@":{"HUSB":"@I201@","WIFE":"@I154@","CHIL":["@I202@"],"id":"@F76@"},"@F77@":{"HUSB":"@I203@","WIFE":"@I154@","CHIL":["@I204@"],"id":"@F77@"},"@F78@":{"HUSB":"@I205@","WIFE":"@I155@","CHIL":["@I206@","@I207@"],"id":"@F78@"},"@F79@":{"HUSB":"@I208@","WIFE":"@I28@","CHIL":["@I209@","@I245@"],"id":"@F79@"},"@F80@":{"HUSB":"@I61@","WIFE":"","CHIL":["@I210@","@I211@","@I213@"],"id":"@F80@"},"@F81@":{"HUSB":"@I212@","WIFE":"@I31@","CHIL":["@I224@","@I246@"],"id":"@F81@"},"@F82@":{"HUSB":"@I225@","WIFE":"@I142@","CHIL":["@I226@"],"id":"@F82@"},"@F83@":{"HUSB":"@I228@","WIFE":"@I46@","CHIL":["@I229@","@I230@","@I261@","@I262@","@I263@"],"id":"@F83@"},"@F84@":{"HUSB":"@I231@","WIFE":"@I106@","CHIL":["@I232@","@I233@"],"id":"@F84@"},"@F85@":{"HUSB":"@I105@","WIFE":"@I234@","CHIL":["@I235@"],"id":"@F85@"},"@F86@":{"HUSB":"@I104@","WIFE":"@I236@","CHIL":["@I237@","@I238@"],"id":"@F86@"},"@F87@":{"HUSB":"@I107@","WIFE":"@I239@","CHIL":["@I240@","@I241@"],"id":"@F87@"},"@F88@":{"HUSB":"@I242@","WIFE":"","CHIL":["@I140@"],"id":"@F88@"},"@F89@":{"HUSB":"@I249@","WIFE":"@I248@","CHIL":["@I250@","@I251@","@I252@"],"id":"@F89@"},"@F90@":{"HUSB":"@I253@","WIFE":"@I251@","CHIL":[],"id":"@F90@"},"@F91@":{"HUSB":"@I252@","WIFE":"@I254@","CHIL":[],"id":"@F91@"},"@F92@":{"HUSB":"@I259@","WIFE":"@I260@","CHIL":["@I228@","@I266@","@I267@","@I268@","@I269@"],"id":"@F92@"},"@F93@":{"HUSB":"","WIFE":"@I229@","CHIL":["@I264@","@I265@"],"id":"@F93@"},"@F94@":{"HUSB":"","WIFE":"@I270@","CHIL":[],"id":"@F94@"},"@F95@":{"HUSB":"@I57@","WIFE":"@I270@","CHIL":["@I126@"],"id":"@F95@"}};
+
+for(var key in people){
+    var p = people[key];
+    graph.addNode({id:p.id,label:p.NAME, color:colors[p.SEX]})
+}
+
+for(var key in families){
+    var f = families[key];
+    var parents = [];
+    if(f.HUSB && f.HUSB != ''){
+        parents.push(people[f.HUSB].id);
+    }
+    if(f.WIFE && f.WIFE != ''){
+        parents.push(people[f.WIFE].id);
+    }
+    
+    for(var i=0; i<f.CHIL.length; i++){
+        var c = people[f.CHIL[i]];
+        graph.addNode({id:c.id,label:c.NAME, color:colors[c.SEX], parents:parents})
+    }
+    
+    if(f.CHIL.length == 0 && parents.length == 2){
+        graph.addEdge({source:parents[0],target:parents[1],color:'#000', weight:1})
+    }
+}
+
+s = new sigma({
+  graph: graph.getGraph(),
+  container: 'graph-container',
+  settings: {
+    drawEdges: true,
+    minArrowSize:5
+  }
+});
+
+
+window.setTimeout(function(){
+    s.startForceAtlas2({
+        worker: true, 
+        barnesHutOptimize: true,
+        linLogMode:false,
+        strongGravityMode:false,
+        gravity: 1,
+        scalingRatio:1,
+        linLogMode:false,
+        outboundAttractionDistribution:false,
+        edgeWeightInfluence:1})}
+    ,5000);
+//window.setTimeout(function(){s.killForceAtlas2()},5000);
+</script>
